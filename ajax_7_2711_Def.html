@@ -1,0 +1,1074 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   
+	<style>
+	
+
+		html,body {
+			font:normal 0.9em arial,helvetica;
+		}
+
+		#log {
+			width:1400px; 
+			height:460px;
+			border:1px solid #7F9DB9; 
+			overflow:auto;
+			background-color: #FFFFFF;
+			padding: 10px;
+			margin-bottom: 2em;
+		}
+		#msg {
+			width:400px;
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+
+
+		/* Style the tab */
+		div.tab {
+			overflow: hidden;
+			border: 1px solid #ccc;
+			background-color: #f1f1f1;
+		}
+		div.all {
+			overflow: hidden;
+			border: 1px solid #ccc;
+			background-color: 		#FAF0E6;
+		}
+
+
+			
+		
+		/* Style the buttons inside the tab */
+		div.tab button {
+			background-color: inherit;
+			float: center;
+			border: soft;
+			outline: none;
+			cursor: pointer;
+			padding: 8px 16px;
+			transition: 0.3s;
+			font-size: 17px;
+		}
+
+		/* Change background color of buttons on hover */
+		div.tab button:hover {
+			background-color: #ddd;
+		}
+
+		/* Create an active/current tablink class */
+		div.tab button.active {
+			background-color: #ccc;
+		}
+
+		/* Style the tab content */
+		.tabcontent {
+			display: none;
+			padding: 6px 12px;
+			border: 1px #ccc;
+			border-top: none;
+		background-color: #f1f1f1;
+		
+
+}
+</style>
+
+      <meta content = "text/html; charset = ISO-8859-1" http-equiv = "content-type">
+
+		
+		
+		<script type="text/javascript">
+
+		//variables necesarias para la gestión de petición de LOGS.
+		var socket = WebSocket;
+		var LOG = [];
+		var ReadNext = 0;
+
+
+		
+		//por defecto el estado del socket es desconectado
+
+		
+function init() {
+	
+	log("connecting...");
+	var host = "ws://10.34.76.11:9000/echobot"; // SET THIS TO YOUR SERVER
+	
+	
+	try {
+	
+		socket = new WebSocket(host);
+		console.log("socket conectado");
+		socket.onopen    = function(msg) { 
+								log("connected");
+							   document.getElementById("scktstatus").innerHTML="socket conectado = status "+this.readyState;
+						   };
+		socket.onmessage = function(msg) { 
+								
+							// storing logs in variable LOG
+							   LOG.push(msg.data);
+							   
+							// Reading flag "still sending"   
+								var blb;
+								var sizeLog = 0
+							    sizeLog=msg.data.size;
+							//	blb=msg.data.slice(-1,sizeLog, 'text/plain');
+								blb=msg.data.slice(0,sizeLog, 'text/plain');
+								log(blb);
+								var reader = new FileReader();
+								reader.onload = function(){
+									  ReadNext=parseInt(reader.result.substring(-1, sizeLog));
+									};
+
+								if (typeof(msg.data)=='object'){
+									reader.readAsText(blb);
+								}
+								else{
+									console.log("error en recepción/envío");
+								 }
+								 console.log("ReadNext");
+								 console.log(ReadNext);
+							};
+						
+						
+						
+		socket.onclose   = function(msg) { 
+						log("disconnected");
+					   document.getElementById("scktstatus").innerHTML="socket desconectado = status "+this.readyState;
+				   };				
+	}
+	catch(ex){ 
+		log(ex); 
+	}
+	//$("msg").focus();
+
+	
+}
+
+function cerrar() {
+	
+	console.log("socket desconectado");
+	socket.close();
+	
+}
+
+// Utilities
+function $(id){ return document.getElementById(id); }
+function log(msg){
+const blb    = msg;
+var reader = new FileReader();
+reader.onload = function(){
+      var text = reader.result;
+
+      $("log").innerHTML=(reader.result.substring(0, 48600));
+    };
+
+
+if (typeof(msg)=='object'){
+
+reader.readAsText(msg);
+}
+else{
+
+ $("log").innerHTML=msg;} }
+function onkey(event){ if(event.keyCode==13){ send(); } }
+function send(msg){
+
+	var txt,msg;
+	console.log(msg);
+	//txt = $("msg");
+	//msg = txt.value;
+	if(!msg) { 
+		alert("Message can not be empty"); 
+		return; 
+	}
+	//txt.value="";
+	//txt.focus();
+	try { 
+		socket.send(msg); 
+		log('Sent: '+msg); 
+	} catch(ex) { 
+		log(ex); 
+	}
+}
+
+function DownloadFile(contenidoEnBlob, nombreArchivo) {
+  //creamos un FileReader para leer el Blob
+  var reader = new FileReader();
+  //Definimos la funciÃ³n que manejarÃ¡ el archivo
+  //una vez haya terminado de leerlo
+  reader.onload = function (event) {
+	//Usaremos un link para iniciar la descarga 
+	var save = document.createElement('a');
+	save.href = event.target.result;
+	save.target = '_blank';
+	//Truco: asÃ­ le damos el nombre al archivo 
+	save.download = nombreArchivo || 'archivo.dat';
+	var clicEvent = new MouseEvent('click', {
+	  'view': window,
+	  'bubbles': true,
+	  'cancelable': true
+	});
+	//Simulamos un clic del usuario
+	//no es necesario agregar el link al DOM.
+	save.dispatchEvent(clicEvent);
+	//Y liberamos recursos...
+	(window.URL || window.webkitURL).revokeObjectURL(save.href);
+  };
+  //Leemos el blob y esperamos a que dispare el evento "load"
+  reader.readAsDataURL(contenidoEnBlob);
+  LOG = [];
+  
+  
+};
+
+
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+	if ((new Date().getTime() - start) > milliseconds){
+	  break;
+	}
+  }
+}
+ 
+//Genera un objeto Blob con los datos a guardar en un archivo TXT
+function GenerateText() {
+
+
+var Await=0;			
+send('20000000');
+sleep(5000);
+
+
+while(ReadNext!=0 && Await<=10 ){  // && Await<=10
+
+	console.log("recibiendo logs ");
+	console.log("Hay mas bloques?");
+	console.log(ReadNext==0);
+	console.log(Await);
+	sleep(2000);
+	//console.log(socket.readyState);
+	Await=Await+1;
+}
+
+
+if(Await==11 || Await==0){
+	log("revisa la conexion, puede que el fichero no se haya descargado correctamente");
+}
+
+return new Blob(LOG, {type: 'text/plain'});
+
+}; 
+
+
+ function getInitInfo(){
+	 var req = new XMLHttpRequest();
+	 
+	 req.open('GET', './GetInfo.php',true);
+	 req.onreadystatechange = function (aEvt) {
+		if (req.readyState == 4) {
+			if(req.status == 200){
+			document.getElementById("OpMode").innerHTML = req.responseText;
+			dump(req.responseText);}
+		else
+			dump("Error loading page\n");
+		}
+	 };
+	req.send();
+}
+ 
+function get_ok_NoVital(url){
+
+	//una vez tengo decidido lo que quiero enviar a la PM y le doy a 'Enviar' pido de nuevo (por orden)
+	//los JSON, modifico el valor que tengo en el formulario en el CED correspondiente y luego los envío
+	//Con un Post de uno en uno
+
+	// Definimos los parámetros que vamos a enviar 
+	var params = "Type=RB"; 
+
+	// Añadimos los parámetros a la URL 
+	var ajax_url_get = url + '?' + params; 
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+	ajax_request.open( "GET", url, true );
+
+	
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+				
+				// Analizaos el responseText que contendrá el JSON enviado desde el servidor
+				var CEDRB = JSON.parse( ajax_request.responseText );
+			}
+		}
+	}
+	
+	
+	var params = "Type=D"; 
+
+	// Añadimos los parámetros a la URL 
+	var ajax_url_get = url + '?' + params; 
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+	ajax_request.open( "GET", url, true );
+
+	
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+				
+				// Analizaos el responseText que contendrá el JSON enviado desde el servidor
+				var CEDD = JSON.parse( ajax_request.responseText );
+			}
+		}
+	}
+	
+	//creo la variable formu que va a ser el formulario que envío con los parámetros configurables del CED
+	
+	var CEDRB = JSON.parse('{ "CED_RB" : {"CommentsData": {"ConfElementType":{"Value": "NVPM","FieldConfigurable":"0"},"Installation Name":{"Value": "ModbusTest","FieldConfigurable":"0"},"Installation Address":{"Value": "1234560","FieldConfigurable":"0"},"ConfDataVersion":{"Value": "12","FieldConfigurable":"0"},"Railroad/Customer":{"Value": "Fernando Arroyo","FieldConfigurable":"0"},"Designer":{"Value": "FARROYOR","FieldConfigurable":"0"},"Checker":{"Value": "FARROYOR","FieldConfigurable":"0"},"Approver":{"Value": "FARROYOD","FieldConfigurable":"0"},"ApprovalDate":{"Value": "03-Apr-2014 16:24","FieldConfigurable":"0"},"GCSVersion":{"Value": "10.0.0","FieldConfigurable":"0"},"Comments":{"Value": "","FieldConfigurable":"0"}},"ConfigurationData": {"FormatVersion":{"Value":"ss","FieldConfigurable":"0"},"DataVersion":{"Value":"ss","FieldConfigurable":"0"},"MinorVersion":{"Value":" ss","FieldConfigurable":"0"}},"RecorderBitData": {"NRecorderBits":{"Value":" ss","FieldConfigurable":"1"},"MnemonicsIDs":{"Value":"ss","FieldConfigurable":"1"}},"RecorderBitsDefaultData": {"NRecorderBitsDefault":{"Value":"ss","FieldConfigurable":"0"},"DefaultMnemonicsIDs":{"Value":" ss©  ss§  ss¨  ss£","FieldConfigurable":"0"}},"CheckData": {"CRC32":{"Value":"ss","FieldConfigurable":"0"}},"SignatureData": {"CRC32":{"Value":"ssðøÏ","FieldConfigurable":"0"}}}}');
+
+	
+	var formElement = document.querySelector('.formulario');
+
+	var formu = new FormData(formElement);
+
+	for(var pair of formu.entries()) {
+		console.log(pair[0]+ ', '+ pair[1]); 
+		//CEDRB.CED_RB.CommentsData.ConfElementType.Value=4;
+		//console.log(CEDRB.pair[0]); 
+		
+	}
+	
+//	var xhr = new XMLHttpRequest();
+//	xhr.open('POST', url, true);
+//	xhr.onload = function () {
+		// do something to response
+//		alert(this.responseText);
+//	};
+//	xhr.send(formu);
+
+
+} 
+ 
+function get_ok_Vital(url){
+
+
+	//una vez tengo decidido lo que quiero enviar a la PM y le doy a 'Enviar' pido de nuevo (por orden)
+	//los JSON, modifico el valor que tengo en el formulario en el CED correspondiente y luego los envío
+	//Con un Post de uno en uno
+
+	
+	
+	//creo la variable formu que va a ser el formulario que envío con los parámetros configurables del CED
+	
+	var formElement = document.querySelector('.formulario');
+
+	var formu = new FormData(formElement);
+
+	for(var pair of formu.entries()) {
+		console.log(pair[0]+ ', '+ pair[1]); 
+	}
+	
+//	var xhr = new XMLHttpRequest();
+//	xhr.open('POST', url, true);
+//	xhr.onload = function () {
+		// do something to response
+//		alert(this.responseText);
+//	};
+//	xhr.send(formu);
+
+} 
+
+function getNumElem(CED, count){
+
+
+	for (var p in CED) {
+		count=count+1;
+		if(typeof CED[p] == 'object'){
+			count=getNumElem(CED[p], count);
+		}
+	}
+	return count;
+	
+}
+
+
+function getRow(name, CED, rows){
+
+	
+	for (var p in CED) {
+		var NumElem=0;
+		var NameForm= name;
+		
+		if(!CED.hasOwnProperty(p)) continue;
+
+			
+		
+		if(typeof CED[p] == 'object'){	
+		
+			NumElem=getNumElem(CED[p], NumElem);
+			rows += '<td rowspan=' + NumElem +'>' + p + '</td>';
+			NameForm+= '.' + p;
+			rows=getRow(NameForm, CED[p], rows);
+						
+		}else{
+		
+			//pinto la tabla del formulario	
+			if (p=="FieldConfigurable" || CED.FieldConfigurable == 0){
+				rows += '<td>' + p + '</td>'
+				input =  '<input type="text" size="15" maxlength="30" readonly="readonly" value="' + CED[p] + '"name="'+ NameForm +'.' + p +'">';	
+				rows += '<td>' + input + '</td>';
+				rows+= '</tr><tr>';
+			}else{
+				rows += '<td>' + p + '</td>'
+				input =  '<input type="text" size="15" maxlength="30" value="' + CED[p] + '"name="'+ NameForm +'.' + p +'">';	
+				rows += '<td>' + input + '</td>';
+				rows+= '</tr><tr>';
+				}
+		}
+						
+	}
+	rows+= '</tr>';
+	
+	return rows;
+
+} 
+ 
+function getCED_RB(ajax_url, rows){
+	
+
+	
+	// Definimos los parámetros que vamos a enviar 
+	var params = "name=RB";
+
+	// Añadimos los parámetros a la URL
+	var ajax_url_get = ajax_url + '?' + params; 
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+	ajax_request.open( "GET", ajax_url_get, true );
+
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+				
+				var NumElem = 0;
+				// Analizaos el responseText que contendrá el JSON enviado desde el servidor
+				//var CED = JSON.parse( ajax_request.responseText );
+
+				var CED = JSON.parse('{ "CED_RB" : {"CommentsData": {"ConfElementType":{"Value": "NVPM","FieldConfigurable":"0"},"Installation Name":{"Value": "ModbusTest","FieldConfigurable":"0"},"Installation Address":{"Value": "1234560","FieldConfigurable":"0"},"ConfDataVersion":{"Value": "12","FieldConfigurable":"0"},"Railroad/Customer":{"Value": "Fernando Arroyo","FieldConfigurable":"0"},"Designer":{"Value": "FARROYOR","FieldConfigurable":"0"},"Checker":{"Value": "FARROYOR","FieldConfigurable":"0"},"Approver":{"Value": "FARROYOD","FieldConfigurable":"0"},"ApprovalDate":{"Value": "03-Apr-2014 16:24","FieldConfigurable":"0"},"GCSVersion":{"Value": "10.0.0","FieldConfigurable":"0"},"Comments":{"Value": "","FieldConfigurable":"0"}},"ConfigurationData": {"FormatVersion":{"Value":"ss","FieldConfigurable":"0"},"DataVersion":{"Value":"ss","FieldConfigurable":"0"},"MinorVersion":{"Value":" ss","FieldConfigurable":"0"}},"RecorderBitData": {"NRecorderBits":{"Value":" ss","FieldConfigurable":"1"},"MnemonicsIDs":{"Value":"ss","FieldConfigurable":"1"}},"RecorderBitsDefaultData": {"NRecorderBitsDefault":{"Value":"ss","FieldConfigurable":"0"},"DefaultMnemonicsIDs":{"Value":" ss©  ss§  ss¨  ss£","FieldConfigurable":"0"}},"CheckData": {"CRC32":{"Value":"ss","FieldConfigurable":"0"}},"SignatureData": {"CRC32":{"Value":"ssðøÏ","FieldConfigurable":"0"}}}}');
+				
+				// La variable jsonObj ahora contiene un objeto con los datos recibidos
+				var input = '';
+				//meto en el formulario el tipo de ced que queremos modificar
+				//rows += '<input type="hidden" name="CEDType" value="RB" />';
+				
+				for (var p in CED) {
+				
+					if(!CED.hasOwnProperty(p)) continue;
+					
+					
+					if(typeof CED[p] == 'object'){
+						
+						NumElem=getNumElem(CED[p], NumElem);
+						rows += '<tr><td rowspan=' + NumElem +'>' + p + '</td>';
+						rows = getRow(p, CED[p], rows);
+						rows += '</tr>';
+						
+					}else{
+					//pinto la tabla del formulario					
+					//OJO, el name tiene que ir acumulándose con cada llamada a getRow[p]
+						rows += '<tr><td>' + p + '</td>'
+						input =  '<input type="text" size="15" maxlength="30" value=' + CED[p] + 'name="' + p +'">';	
+						rows += '<td>' + input + '</td></tr>';				
+					}
+				}
+
+				return rows;
+		
+
+		}	
+		else
+			dump("Error loading page\n");
+		}
+		
+		
+	 }
+	 
+	//Enviamos la solicitud
+	ajax_request.send();
+	
+ }
+ 
+ <!-- function prueba(){ -->
+
+	<!-- var pruebastring='{ "nombre" : 1, "apellidos" : "Molina Ballesteros", "edad" : 35, "direccion" : { "calle" : "Gran Via, 2", "ciudad" : "Madrid"} }' -->
+	<!-- var pruebaJSON = JSON.parse( pruebastring ); -->
+	<!-- // La variable jsonObj ahora contiene un objeto con los datos recibidos -->
+	<!-- var table = document.querySelector('.log'); -->
+	<!-- var rows = '<FORM method=post action=http://google.es> <table>  <tr> <th>mnemonic</th> <th>seleccionado</th> </tr> '; -->
+	<!-- var casilla= '<input type="checkbox" size="15" maxlength="30" value="1" '; -->
+			
+	<!-- for (var p in pruebaJSON) { -->
+		<!-- rows += '<tr><td>' + p + '</td><td style="text-align: center; vertical-align: middle;">' + casilla; -->
+		<!-- if (pruebaJSON[p]==1){ -->
+			<!-- rows+= 'name="' + p + '" checked>'; -->
+		<!-- }else{ -->
+			<!-- rows+= 'name="' + p + '">'; -->
+		<!-- } -->
+		<!-- rows += '</td></tr>'; -->
+	  <!-- } -->
+	
+	<!-- rows +='<TR> <INPUT type="submit" value="Enviar"> </TR> </table> </FORM>' -->
+	<!-- table.innerHTML = rows; -->
+ 
+ <!-- } -->
+ 
+ function getCED_D(ajax_url, rows){
+	 // Definimos la URL que vamos a solicitar via Ajax
+
+	// Definimos los parámetros que vamos a enviar 
+	var params = "name=D";
+
+	// Añadimos los parámetros a la URL 
+	var ajax_url_get = ajax_url + '?' + params; 
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+	ajax_request.open( "GET", ajax_url_get, true );
+
+
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+				
+				// Analizaos el responseText que contendrá el JSON enviado desde el servidor
+				var CED = JSON.parse( ajax_request.responseText );
+
+
+				// La variable jsonObj ahora contiene un objeto con los datos recibidos
+				var input = '';
+				
+				//meto en el formulario el tipo de ced que queremos modificar
+				//rows += '<input type="hidden" name="CEDType" value="D" />';
+				for (var p in CED) {
+				  
+					input = '<input type="text" size="15" maxlength="30" value=' + CED[p] + ' name="' + p +'">';
+					rows += '<tr><td>' + p + '</td><td>' + input + '</td></tr>';
+				  
+				 }
+				  
+				return rows;
+		//		table.innerHTML = rows;
+				
+		}	
+		else
+			dump("Error loading page\n");
+		}
+		
+	 };
+	 
+	//Enviamos la solicitud
+	ajax_request.send();
+	
+	
+}
+ 
+ 
+ function getCED_PTC(ajax_url, rows){
+
+	// Definimos los parámetros que vamos a enviar 
+	var params = "name=PTC"; 
+
+	// Añadimos los parámetros a la URL 
+	var ajax_url_get = ajax_url + '?' + params; 
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+	ajax_request.open( "GET", ajax_url, true );
+
+	
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+				
+				// Analizaos el responseText que contendrá el JSON enviado desde el servidor
+				var CED = JSON.parse( ajax_request.responseText );
+				// La variable jsonObj ahora contiene un objeto con los datos recibidos
+				var input = '';
+				
+				var casilla= '<input type="checkbox" size="15" maxlength="30" value="1" ';
+								
+				//meto en el formulario el tipo de ced que queremos modificar
+				//rows += '<input type="hidden" name="CEDType" value="RB" />';
+				
+				for (var p in CED) {
+					rows += '<tr><td>' + p + '</td><td style="text-align: center; vertical-align: middle;">' + casilla;
+					if (CED[p]==1){
+						rows+= ' name="' + p + '" checked>';
+					}else{
+						rows+= ' name="' + p + '">';
+					}
+					rows += '</td></tr>';
+				  }
+				  
+				return rows;
+		//		table.innerHTML = rows;
+				
+		}else
+			dump("Error loading page\n");
+		}
+				
+	};
+	//Enviamos la solicitud
+	ajax_request.send();
+}
+ 
+ 
+ function getCED_FM(ajax_url, rows){ //OJO!! En este formulario existe la posibilidad de mandar un mnemónico con 0
+						// y con 1 a la vez. En USA tendrán que capar esta posibilidad, a nosotros nos interesa
+						// poder forzar este error para que se chequee que el post es consistente en el .php
+
+
+	// Definimos los parámetros que vamos a enviar 
+	var params = "name=FM"; 
+
+	// Añadimos los parámetros a la URL 
+	var ajax_url_get = ajax_url +  '?' + params;
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+		ajax_request.open( "GET", ajax_url, true );
+
+	
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+				
+				// Analizaos el responseText que contendrá el JSON enviado desde el servidor
+				var CED = JSON.parse( ajax_request.responseText );
+
+				// La variable jsonObj ahora contiene un objeto con los datos recibidos
+				var input = '';
+				var casillaTrue= '<input type="checkbox" size="15" maxlength="30" value="1" ';
+				var casillaFalse= '<input type="checkbox" size="15" maxlength="30" value="0" ';
+	
+				//meto en el formulario el tipo de ced que queremos modificar
+				//rows += '<input type="hidden" name="Type" value="FM" />';
+				for (var p in CED) {
+					
+					rows += '<tr><td>' + p + '</td><td>' + casillaTrue;
+					if (CED[p]==1){
+						rows+= ' name="' + p + '" checked>';
+					}else{
+						rows+= ' name="' + p + '">';
+					}
+					rows += '</td><td>' + casillaFalse  
+					if (CED[p]==1){
+						rows+= ' name="' + p + '">';
+					}else{
+						rows+= ' name="' + p + '" checked>';
+					}
+					rows += '</td></tr>';
+				  }
+				
+				return rows;
+//				table.innerHTML = rows;
+
+		}	
+		else
+			dump("Error loading page\n");
+		}
+		
+	 };
+	 
+	//Enviamos la solicitud
+	ajax_request.send();
+}
+	 
+function getCED_Vital(){
+
+	var table = document.querySelector('.log');
+	var ajax_url = "http://10.34.76.11/Update.php";
+	var rows = "";
+
+	rows += '<br> <FORM  class="formulario" id="formulario" method=post action=' + ajax_url +'>  <h4>CED PTC</h4> <table> ';
+
+	rows = getCED_PTC(ajax_url, rows);
+
+	rows += '</table> <h4>CED FM</h4> <table>'; 
+	
+	rows= getCED_FM(ajax_url, rows);
+
+	rows +=' </table> <h6>CED FM</h6> <br><br> <input type="text" name="UCN"> <br>';
+	rows +=' <br> <br> <input type="button" value="Enviar" onclick=get_ok_Vital("' + ajax_url + '")> <br> </FORM>';
+	
+	table.innerHTML = rows;
+
+}
+
+function getCED_NonVital(){
+
+	var table = document.querySelector('.log');
+	var ajax_url = "http://10.34.76.11/Update.php";
+	var rows = "";
+
+	rows += '<br> <FORM  class="formulario" id="formulario" method=post action=' + ajax_url +'>  <h4>CED RB</h4> <table> ';
+
+	rows= getCED_RB(ajax_url, rows);
+
+	rows += '</table> <h4>CED D</h4> <table>'; 
+	
+	rows= getCED_D(ajax_url, rows);
+
+	rows +=' </table> <br> <br> <input type="button" value="Enviar" onclick=get_ok_NoVital("' + ajax_url + '")> <br> </FORM>';
+
+	
+	table.innerHTML = rows;
+
+}
+ 
+function Check_Signatures(){
+
+	// Definimos la URL que vamos a solicitar via Ajax
+	var table = document.querySelector('.log');
+	var ajax_url = "http://10.34.76.11/Update.php";
+	var rows = "";
+	
+	var params = "Type=Signatures"; 
+
+	// Añadimos los parámetros a la URL 
+	var ajax_url_get = ajax_url +  '?' + params;
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+	ajax_request.open( "GET", ajax_url, true );
+
+	
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+
+				var CED = JSON.parse( ajax_request.responseText );
+				// La variable jsonObj ahora contiene un objeto con los datos recibidos
+				var input = '';
+				
+				rows += '<br><table>';
+				//meto en el formulario el tipo de ced que queremos modificar
+				rows += '<input type="hidden" name="CEDType" value="D" />';
+				for (var p in CED) {
+
+					input = '<input type="text" size="15" maxlength="30" value=' + CED[p] + ' name="' + p +'">';
+					rows += '<tr><td>' + p + '</td><td>' + input + '</td></tr>';
+				  
+				 }
+
+				rows += '</table>';
+				
+				table.innerHTML = rows;
+		}	
+		else
+			dump("Error loading page\n");
+		}
+		
+	 };
+	 
+	//Enviamos la solicitud
+	ajax_request.send();
+	
+	
+}
+
+function Check_Updated(){
+
+
+	// Definimos la URL que vamos a solicitar via Ajax
+	var table = document.querySelector('.log');
+	var ajax_url = "http://10.34.76.17/Update.php";
+	var rows = "";
+	
+	var params = "Type=Updated"; 
+
+	// Añadimos los parámetros a la URL 
+	var ajax_url_get = ajax_url +  '?' + params;
+
+	// Creamos un nuevo objeto encargado de la comunicación
+	var ajax_request = new XMLHttpRequest();
+
+	// Definimos como queremos realizar la comunicación
+	ajax_request.open( "GET", ajax_url, true );
+
+	
+	ajax_request.onreadystatechange = function (aEvt) {
+		if (ajax_request.readyState == 4) {
+			if(ajax_request.status == 200){
+
+				var CED = JSON.parse( ajax_request.responseText );
+				// La variable jsonObj ahora contiene un objeto con los datos recibidos
+				var input = '';
+				
+				rows += '<br> <h4> Updated CEDs </h4> <br> <table>';
+				//meto en el formulario el tipo de ced que queremos modificar
+				rows += '<input type="hidden" name="CEDType" value="D" />';
+				for (var p in CED) {
+				
+					input = '<input type="text" size="15" maxlength="30" value=' + CED[p] + ' name="' + p +'">';
+					rows += '<tr><td>' + p + '</td><td>' + input + '</td></tr>';
+				  
+				 }
+
+				rows += '</table>';
+				
+				table.innerHTML = rows;
+		}	
+		else
+			dump("Error loading page\n");
+		}
+		
+	 };
+	 
+	//Para el caso en que subimos el Zip y esperamos respuesta de lo que se ha actualizado
+	//Esperaremos un rato a que el servidor reciba el Zip y actualice lo que nos tenga que actualizar.
+	sleep(2000);
+	 
+	//Enviamos la solicitud
+	ajax_request.send();
+
+}
+	
+ 
+ 
+ function loadJSON(){/*
+ 
+	var data_file = "data.json";
+	var http_request = new XMLHttpRequest();
+	try{
+	   // Opera 8.0+, Firefox, Chrome, Safari
+	   http_request = new XMLHttpRequest();
+	}catch (e){
+	   // Internet Explorer Browsers
+	   try{
+		  http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			
+	   }catch (e) {
+		
+		  try{
+			 http_request = new ActiveXObject("Microsoft.XMLHTTP");
+		  }catch (e){
+			 // Something went wrong
+			 alert("Your browser broke!");
+			 return false;
+		  }
+			
+	   }
+	}
+	
+	http_request.onreadystatechange = function(){
+	
+	   if (http_request.readyState == 4  ){
+		  // Javascript function JSON.parse to parse JSON data
+		  var jsonObj = JSON.parse(http_request.responseText);
+
+		  // jsonObj variable now contains the data structure and can
+		  // be accessed as jsonObj.name and jsonObj.country.
+		  document.getElementById("Signal1").innerHTML = jsonObj[0].Signal;
+		  document.getElementById("Value1").innerHTML = jsonObj[0].Value;
+		  
+		  document.getElementById("Signal2").innerHTML = jsonObj[1].Signal;
+		  document.getElementById("Value2").innerHTML = jsonObj[1].Value;
+		  document.getElementById("MD5").innerHTML = jsonObj[2].Value;
+	   }
+	}
+	
+	http_request.open("GET", data_file, true);
+	http_request.send();
+	init();
+ */}
+		
+		
+      </script>
+ <script type = "application/javascript">
+	  function openTab(evt, cityName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(cityName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+ </script>
+
+
+
+</head>
+
+
+
+	        <title>WESTRACE-FREIGHT</title>
+   <body >
+
+<div class="all" align="center">
+	   
+	<div class="tab" align="center">
+	   
+
+	   
+		  <button class="tablinks" onclick="openTab(event, 'Logger')">Logger</button>
+		  <button class="tablinks" onclick="openTab(event, 'Upload');getInitInfo();">Upload</button>
+		  <button class="tablinks" onclick="openTab(event, 'Update')">Update</button>	  
+		  <!-- <button class="tablinks" onclick="openTab(event, 'Commands')">Commands</button> -->
+		  <button class="tablinks" onclick="openTab(event, 'Check')">Check</button>		  
+		
+		<div id="Check" class="tabcontent" align="center">
+			  <br>
+			<div id="Checkbtn">
+				
+				
+				<button onclick="Check_Signatures()">Check Signatures</button>
+				<button onclick="Check_Updated()">Check Updated CEDs</button>
+
+				
+			</div>
+
+
+		</div>
+		
+		
+		<!-- <div id="Commands" class="tabcontent" align="center"> -->
+			  <!-- <br> -->
+			<!-- <div id="Commandsbtn"> -->
+				
+				
+				<!-- <button onclick="send('10000000')">Logic States</button> -->
+				<!-- <button onclick="DownloadFile(GenerateText(), 'File.txt')">PTC Log</button> -->
+				<!-- <button onclick="send('I0000000')">Get Init Info</button> -->
+
+
+				
+			<!-- </div> -->
+
+
+		<!-- </div> -->
+		
+		<div id="Logger" class="tabcontent" align="center">
+			  <br>
+			<div id="Loggerbtn">
+				 
+				<button onclick="DownloadFile(GenerateText(), 'File.txt')">PTC Log</button>		
+		<!-- <form action="getDIAG.php" method="get"> -->
+				<button class="getlogs" formaction="/getDIAG.php">Diag.log</button>
+		<!-- </form> -->
+		<!-- <form action="getRECORDER.php" method="get">	  -->
+				<button class="getlogs" formaction="/getRECORDER.php">Recorder.log</button>
+		<!-- </form> -->
+				<button class="getlogs" formaction="/getConfig.php">Config.log</button>
+				<button class="getlogs" formaction="/getError.php">Error.log</button>
+			</div>
+
+
+		</div>	  
+
+	 
+		<div id="Update" class="tabcontent" align="center">
+			
+			<br>
+				
+		  <button class="update" onclick="getCED_Vital()">Update Vital Files</button>
+		  <button class="update" onclick="getCED_NonVital()">Update Non Vital Files</button>
+
+		  <!-- <button class="update" onclick="prueba()">prueba</button> -->
+
+
+		</div>
+
+		<div id="Upload" class="tabcontent" align="center">
+			 
+			<br>
+			 
+			 operation PM mode:
+			 
+			<b> <span id="OpMode"></span></b>
+
+			<form id="CED-UploadForm" action="Upload.php" method="post" enctype="multipart/form-data">
+			<br><br>  
+			   Select Zip:
+				<input type="file" id="CED-FileSelect" name="fileToUpload" id="fileToUpload">
+				<input type="submit" onsubmit="Check_Updated()" id="CED-UploadButton" value="Upload" name="submit">
+			</form>
+
+		</div>
+	   
+	</div>
+
+
+
+	<br><br><br>
+
+		<!-- <div> -->
+		  <!-- <label for="textNombre">Nombre:</label> -->
+		  <!-- <input type="text" id="textNombre" value="Pedro PÃ©rez <Ing. & Lic.>" /><br/> -->
+		  <!-- <label for="textTelefono">TelÃ©fono:</label> -->
+		  <!-- <input type="text" id="textTelefono" value="+58.212.555.5555" /><br/> -->
+		<!-- </div><br/> -->
+	
+	<div class="connect">	
+		
+		<h4 id="scktstatus">socket desconectado </h4>
+		<input id="botonAbrir" type="button" onclick="init()"; value="conectar"/>
+		<input id="botonCerrar" type="button" onclick="cerrar()"; value="desconectar"/>
+
+			
+	</div>
+	
+
+	
+
+	<br><br>
+			  
+						
+	<div class="log" id="log">
+	</div>		
+
+
+
+</div>
+
+
+</body>
+</html>
+
